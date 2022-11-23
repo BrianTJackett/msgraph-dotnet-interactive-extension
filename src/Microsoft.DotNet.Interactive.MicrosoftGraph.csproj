@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.7.0" />
+    <PackageReference Include="Azure.Identity" Version="1.8.0" />
     <PackageReference Include="microsoft.dotnet.interactive" Version="1.0.0-beta.22553.7" />
     <PackageReference Include="microsoft.dotnet.interactive.csharp" Version="1.0.0-beta.22553.7" />
     <PackageReference Include="Microsoft.Graph" Version="5.0.0-preview.13" />
@@ -40,12 +40,4 @@
   <ItemGroup>
     <None Include="$(OutputPath)/Microsoft.DotNet.Interactive.MicrosoftGraph.dll" Pack="true" PackagePath="interactive-extensions/dotnet" />
   </ItemGroup>
-
-  <Target Name="ChangeAliasesOfStrongNameAssemblies" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
-    <ItemGroup>
-      <ReferencePath Condition="'%(FileName)' == 'Microsoft.Graph.Beta'">
-        <Aliases>BetaLib</Aliases>
-      </ReferencePath>
-    </ItemGroup>
-  </Target>
 </Project>

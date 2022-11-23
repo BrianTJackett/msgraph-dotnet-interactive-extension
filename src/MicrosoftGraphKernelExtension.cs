@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-extern alias BetaLib;
-
 using System.CommandLine;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.DotNet.Interactive.Commands;
 using Microsoft.DotNet.Interactive.CSharp;
 using Microsoft.Graph;
-using Beta = BetaLib.Microsoft.Graph.Beta;
+using Beta = Microsoft.Graph.Beta;
 
 namespace Microsoft.DotNet.Interactive.MicrosoftGraph;
 
@@ -43,6 +42,25 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
         var clientSecretOption = new Option<string>(
             new[] { "-s", "--client-secret" },
             description: "Application (client) secret registered in Azure Active Directory.");
+        var configFileOption = new Option<string>(
+            new[] { "-f", "--config-file" },
+            description: "JSON file containing any combination of tenant ID, client ID, and client secret. Values are only used if corresponding option is not passed to the magic command.",
+            parseArgument: result =>
+            {
+                if (result.Tokens.Count == 0)
+                {
+                    return null;
+                }
+
+                var filePath = Path.GetFullPath(result.Tokens.Single().Value);
+                if (!File.Exists(filePath))
+                {
+                    result.ErrorMessage = "File does not exist";
+                    return null;
+                }
+
+                return filePath;
+            });
         var scopeNameOption = new Option<string>(
             new[] { "-n", "--scope-name" },
             description: "Scope name for Microsoft Graph connection.",
@@ -65,6 +83,7 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
             tenantIdOption,
             clientIdOption,
             clientSecretOption,
+            configFileOption,
             scopeNameOption,
             authenticationFlowOption,
             nationalCloudOption,
@@ -72,10 +91,13 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
         };
 
         graphCommand.SetHandler(
-            async (string tenantId, string clientId, string clientSecret, string scopeName, AuthenticationFlow authenticationFlow, NationalCloud nationalCloud, ApiVersion apiVersion) =>
+            async (string tenantId, string clientId, string clientSecret, string configFile, string scopeName, AuthenticationFlow authenticationFlow, NationalCloud nationalCloud, ApiVersion apiVersion) =>
             {
+                // Combine options to get app registration details
+                var credentialOptions = CredentialOptions.GetCredentialOptions(tenantId, clientId, clientSecret, configFile);
+
                 var tokenCredential = CredentialProvider.GetTokenCredential(
-                    authenticationFlow, tenantId, clientId, clientSecret, nationalCloud);
+                    authenticationFlow, credentialOptions, nationalCloud);
 
                 switch (apiVersion)
                 {
@@ -98,6 +120,7 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
             tenantIdOption,
             clientIdOption,
             clientSecretOption,
+            configFileOption,
             scopeNameOption,
             authenticationFlowOption,
             nationalCloudOption,
