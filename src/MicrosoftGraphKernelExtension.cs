@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.DotNet.Interactive.Commands;
 using Microsoft.DotNet.Interactive.CSharp;
+using Microsoft.DotNet.Interactive.PowerShell;
 using Microsoft.Graph;
 using Beta = Microsoft.Graph.Beta;
 
@@ -32,6 +33,7 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
         }
 
         var cSharpKernel = cs.ChildKernels.OfType<CSharpKernel>().FirstOrDefault();
+        var powerShellKernel = cs.ChildKernels.OfType<PowerShellKernel>().FirstOrDefault();
 
         var tenantIdOption = new Option<string>(
             new[] { "-t", "--tenant-id" },
@@ -78,7 +80,7 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
             description: "Microsoft Graph API version.",
             getDefaultValue: () => ApiVersion.V1);
 
-        var graphCommand = new Command("#!microsoftgraph", "Send Microsoft Graph requests using the specified permission flow.")
+        var cSharpGraphCommand = new Command("#!microsoftgraph", "Send Microsoft Graph requests using the specified permission flow.")
         {
             tenantIdOption,
             clientIdOption,
@@ -90,7 +92,7 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
             apiVersionOption,
         };
 
-        graphCommand.SetHandler(
+        cSharpGraphCommand.SetHandler(
             async (string tenantId, string clientId, string clientSecret, string configFile, string scopeName, AuthenticationFlow authenticationFlow, NationalCloud nationalCloud, ApiVersion apiVersion) =>
             {
                 // Combine options to get app registration details
@@ -126,9 +128,50 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
             nationalCloudOption,
             apiVersionOption);
 
-        cSharpKernel.AddDirective(graphCommand);
+        cSharpKernel.AddDirective(cSharpGraphCommand);
 
+        var powerShellGraphCommand = new Command("#!microsoftgraph", "Send Microsoft Graph requests using the specified permission flow.")
+        {
+            tenantIdOption,
+            clientIdOption,
+            configFileOption,
+            authenticationFlowOption,
+            nationalCloudOption,
+            apiVersionOption,
+        };
+
+        powerShellGraphCommand.SetHandler(
+            async (string tenantId, string clientId, string configFile, AuthenticationFlow authenticationFlow, NationalCloud nationalCloud, ApiVersion apiVersion) =>
+            {
+                string connectString = $"Connect-MgGraph -TenantId {tenantId} -ClientId {clientId} -UseDeviceAuthentication";
+                KernelInvocationContextExtensions.Display(KernelInvocationContext.Current, $"{connectString}");
+
+                switch (apiVersion)
+                {
+                    case ApiVersion.V1:
+                        await powerShellKernel.SubmitCodeAsync($"Connect-MgGraph -TenantId {tenantId} -ClientId {clientId} -UseDeviceAuthentication");
+                        break;
+                    case ApiVersion.Beta:
+                        await powerShellKernel.SubmitCodeAsync($"Connect-MgBetaGraph -TenantId {tenantId} -ClientId {clientId} -UseDeviceAuthentication");
+                        break;
+                    default:
+                        break;
+                }
+
+                KernelInvocationContextExtensions.Display(KernelInvocationContext.Current, $"Connected to Microsoft Graph PowerShell SDK");
+            },
+            tenantIdOption,
+            clientIdOption,
+            configFileOption,
+            authenticationFlowOption,
+            nationalCloudOption,
+            apiVersionOption);
+
+        powerShellKernel.AddDirective(powerShellGraphCommand);
+
+        // defer commands to be added to specific kernels
         cSharpKernel.DeferCommand(new SubmitCode("using Microsoft.Graph;"));
+        powerShellKernel.SubmitCodeAsync("Import-Module Microsoft.Graph.Authentication, Microsoft.Graph.Beta.Users");
 
         return Task.CompletedTask;
     }
