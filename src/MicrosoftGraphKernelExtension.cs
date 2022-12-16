@@ -134,44 +134,22 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
         {
             tenantIdOption,
             clientIdOption,
-            configFileOption,
-            authenticationFlowOption,
-            nationalCloudOption,
-            apiVersionOption,
         };
 
         powerShellGraphCommand.SetHandler(
-            async (string tenantId, string clientId, string configFile, AuthenticationFlow authenticationFlow, NationalCloud nationalCloud, ApiVersion apiVersion) =>
+            async (string tenantId, string clientId) =>
             {
-                string connectString = $"Connect-MgGraph -TenantId {tenantId} -ClientId {clientId} -UseDeviceAuthentication";
-                KernelInvocationContextExtensions.Display(KernelInvocationContext.Current, $"{connectString}");
-
-                switch (apiVersion)
-                {
-                    case ApiVersion.V1:
-                        await powerShellKernel.SubmitCodeAsync($"Connect-MgGraph -TenantId {tenantId} -ClientId {clientId} -UseDeviceAuthentication");
-                        break;
-                    case ApiVersion.Beta:
-                        await powerShellKernel.SubmitCodeAsync($"Connect-MgBetaGraph -TenantId {tenantId} -ClientId {clientId} -UseDeviceAuthentication");
-                        break;
-                    default:
-                        break;
-                }
-
+                await powerShellKernel.SubmitCodeAsync($"Connect-MgGraph -TenantId {tenantId} -ClientId {clientId} -UseDeviceAuthentication");
                 KernelInvocationContextExtensions.Display(KernelInvocationContext.Current, $"Connected to Microsoft Graph PowerShell SDK");
             },
             tenantIdOption,
-            clientIdOption,
-            configFileOption,
-            authenticationFlowOption,
-            nationalCloudOption,
-            apiVersionOption);
+            clientIdOption);
 
         powerShellKernel.AddDirective(powerShellGraphCommand);
 
         // defer commands to be added to specific kernels
         cSharpKernel.DeferCommand(new SubmitCode("using Microsoft.Graph;"));
-        powerShellKernel.SubmitCodeAsync("Import-Module Microsoft.Graph.Authentication, Microsoft.Graph.Beta.Users");
+        powerShellKernel.SubmitCodeAsync("Import-Module Microsoft.Graph.Authentication");
 
         return Task.CompletedTask;
     }
