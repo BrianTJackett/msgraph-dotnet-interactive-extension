@@ -19,3 +19,6 @@ bld/
 
 # Settings JSON file
 *appregistration*.json
+
+# VS Code workspace
+*.code-workspace
