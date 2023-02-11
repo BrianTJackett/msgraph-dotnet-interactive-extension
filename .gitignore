@@ -10,6 +10,9 @@ bld/
 [Oo]bj/
 [Ll]og/
 
+# VS Code workspace
+*.code-workspace
+
 # test .Net Interactive notebook
 *.ipynb
 !demo.ipynb
