@@ -13,6 +13,9 @@ bld/
 # VS Code workspace
 *.code-workspace
 
+# NuGet config
+nuget.config
+
 # test .Net Interactive notebook
 *.ipynb
 !demo.ipynb

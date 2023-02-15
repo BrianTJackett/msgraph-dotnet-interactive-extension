@@ -107,13 +107,11 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
                         GraphServiceClient graphServiceClient = new(tokenCredential, Scopes.GetScopes(nationalCloud));
                         graphServiceClient.RequestAdapter.BaseUrl = BaseUrl.GetBaseUrl(nationalCloud, apiVersion);
                         await cSharpKernel.SetValueAsync(scopeName, graphServiceClient, typeof(GraphServiceClient));
-                        cSharpKernel.DeferCommand(new SubmitCode("using Microsoft.Graph;"));
                         break;
                     case ApiVersion.Beta:
                         Beta.GraphServiceClient graphServiceClientBeta = new(tokenCredential, Scopes.GetScopes(nationalCloud));
                         graphServiceClientBeta.RequestAdapter.BaseUrl = BaseUrl.GetBaseUrl(nationalCloud, apiVersion);
                         await cSharpKernel.SetValueAsync(scopeName, graphServiceClientBeta, typeof(Beta.GraphServiceClient));
-                        cSharpKernel.DeferCommand(new SubmitCode("using Microsoft.Graph.Beta;"));
                         break;
                     default:
                         break;
@@ -129,7 +127,7 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
 
         cSharpKernel.AddDirective(graphCommand);
 
-        //cSharpKernel.DeferCommand(new SubmitCode("using Microsoft.Graph;"));
+        cSharpKernel.DeferCommand(new SubmitCode("using Microsoft.Graph;"));
 
         return Task.CompletedTask;
     }
