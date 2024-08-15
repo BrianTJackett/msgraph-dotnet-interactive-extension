@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.CommandLine;
 using Microsoft.DotNet.Interactive.Commands;
 using Microsoft.DotNet.Interactive.CSharp;
+using Microsoft.DotNet.Interactive.Directives;
 using Microsoft.Graph;
 using Beta = Microsoft.Graph.Beta;
 
@@ -34,53 +34,56 @@ public class MicrosoftGraphKernelExtension : IKernelExtension
             return Task.CompletedTask;
         }
 
-        Option<string?> clientIdOption = new(
-            new[] { "--client-id", "-c" },
+        KernelDirectiveParameter clientIdOption = new(
+            "--client-id",
             description: "Application (client) ID registered in Azure Active Directory.");
 
-        Option<string> tenantIdOption = new(
-            new[] { "--tenant-id", "-t" },
-            description: "Directory (tenant) ID in Azure Active Directory.",
-            getDefaultValue: () => "common");
+        KernelDirectiveParameter tenantIdOption = new(
+            "--tenant-id",
+            description: "Directory (tenant) ID in Azure Active Directory.");
+            //getDefaultValue: () => "common");
 
-        Option<string?> clientSecretOption = new(
-            new[] { "--client-secret", "-s" },
+        KernelDirectiveParameter clientSecretOption = new(
+            "--client-secret",
             description: "Application (client) secret registered in Azure Active Directory.");
 
-        Option<FileInfo> configFileOption = new(
-            new[] { "--config-file", "-f" },
+        KernelDirectiveParameter configFileOption = new(
+            "--config-file",
             description: "JSON file containing any combination of tenant ID, client ID, and client secret. Values are only used if corresponding option is not passed to the magic command.");
 
-        Option<string> scopeNameOption = new(
-            new[] { "--scope-name", "-n" },
-            description: "Scope name for Microsoft Graph connection.",
-            getDefaultValue: () => "graphClient");
+        KernelDirectiveParameter scopeNameOption = new(
+            "--scope-name",
+            description: "Scope name for Microsoft Graph connection.");
+        //getDefaultValue: () => "graphClient");
 
-        Option<AuthenticationFlow> authenticationFlowOption = new(
-            new[] { "--authentication-flow", "-a" },
-            description: "Azure Active Directory authentication flow to use.",
-            getDefaultValue: () => AuthenticationFlow.InteractiveBrowser);
+        KernelDirectiveParameter authenticationFlowOption = new(
+            "--authentication-flow",
+            description: "Azure Active Directory authentication flow to use.");
+        //getDefaultValue: () => AuthenticationFlow.InteractiveBrowser);
 
-        Option<NationalCloud> nationalCloudOption = new(
-            new[] { "--national-cloud", "-nc" },
-            description: "National cloud for authentication and Microsoft Graph service root endpoint.",
-            getDefaultValue: () => NationalCloud.Global);
+        KernelDirectiveParameter nationalCloudOption = new KernelDirectiveParameter(
+            "--national-cloud",
+            description: "National cloud for authentication and Microsoft Graph service root endpoint.").AddCompletions(_ => Enum.GetValues<NationalCloud>().Select(c => c.ToString()));
+            //getDefaultValue: () => NationalCloud.Global);
 
-        Option<ApiVersion> apiVersionOption = new(
-            new[] { "--api-version", "-v" },
-            description: "Microsoft Graph API version.",
-            getDefaultValue: () => ApiVersion.V1);
+        KernelDirectiveParameter apiVersionOption = new(
+            "--api-version",
+            description: "Microsoft Graph API version.");
+            //getDefaultValue: () => ApiVersion.V1);
 
-        Command graphCommand = new("#!microsoftgraph", "Send Microsoft Graph requests using the specified permission flow.")
+        KernelActionDirective graphCommand = new KernelActionDirective("#!microsoftgraph")
         {
-            clientIdOption,
-            tenantIdOption,
-            clientSecretOption,
-            configFileOption.ExistingOnly(),
-            scopeNameOption,
-            authenticationFlowOption,
-            nationalCloudOption,
-            apiVersionOption,
+            Parameters = [
+                clientIdOption,
+                tenantIdOption,
+                clientSecretOption,
+                configFileOption,
+                scopeNameOption,
+                authenticationFlowOption,
+                nationalCloudOption,
+                apiVersionOption,
+            ],
+            Description = "Send Microsoft Graph requests using the specified permission flow."
         };
 
         graphCommand.SetHandler(
